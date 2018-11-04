@@ -1,0 +1,54 @@
+*, *:before, *:after
+	box-sizing: border-box
+
+html, body
+	margin: 0
+	padding: 0
+	height: 100%
+
+c_black = #0f0f23
+
+body
+	background-color: c_black
+	color: white
+	
+	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif
+
+header
+	text-align: center
+	font-weight: 700
+	margin-top: 16px
+	font-size: 10vw
+
+#grid
+	padding: 16px
+	width: 100%
+	font-size: 0
+	.tile
+		position: relative
+		border: 1px solid c_black
+		display: inline-block
+		width: 10%
+		height: 10%
+		background-color: #a1a1a1
+		color: black
+		font-size: 4vw
+		&.revealed
+			background-color: #cdcdcd
+			&.mine
+				background-color: red
+			&.diamond
+				background-color: cyan
+			&::before
+				position: absolute
+				left: 50%
+				top: 50%
+				transform: translate(-50%, -50%)
+				content: attr(data-adj)
+				display: block
+		&.player
+			border: 5px solid white
+		&::after
+			content: ''
+			display: block
+			padding-bottom: 100%

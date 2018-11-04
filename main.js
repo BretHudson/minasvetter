@@ -44,18 +44,37 @@ let movePlayer = (grid, rowWidth, player, x, y) => {
 	revealGrid(grid, rowWidth, player.x, player.y);
 };
 
+let resizeDOMGrid = () => {
+	let header = document.q('header');
+	let headerHeight = header.getBoundingClientRect().height;
+	
+	let wh = window.innerHeight - (headerHeight * 2);
+	
+	let gridElem = document.getElementById('grid');
+	if (wh < window.innerWidth) {
+		gridElem.style.width = wh + 'px';
+	} else
+		gridElem.style.width = '100%';
+};
+
 let grid = [];
 let mines = 10;
 let diamonds = 5;
 let sizeOfGrid = 100;
 let rowWidth = 10;
-let gridElem;
 let player = {
 	x: Math.floor(rowWidth / 2),
 	y: Math.floor((sizeOfGrid / rowWidth)) - 1
 };
-document.addEventListener('DOMContentLoaded', (e) => {
-	gridElem = document.getElementById('grid');
+
+window.on('resize', (e) => {
+	resizeDOMGrid();
+});
+
+document.on('DOMContentLoaded', (e) => {
+	let gridElem = document.q('#grid');
+	
+	resizeDOMGrid();
 	
 	// Create a grid, we need 10x10 for starters
 	for (let i = 0; i < sizeOfGrid; ++i)

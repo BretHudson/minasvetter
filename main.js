@@ -71,12 +71,10 @@ let revealGrid = (grid, rowWidth, x, y) => {
 		while (queue.length > 0) {
 			let item = queue.shift();
 			
-			if (item.val !== 0)
+			if (item.val !== TILE_EMPTY)
 				continue;
-			if (item.adjCount > 0) {
+			if (item.adjCount > 0)
 				item.element.addClass('revealed');
-				continue;
-			}
 			if (item.element.hasClass('revealed'))
 				continue;
 			
@@ -331,6 +329,14 @@ let handleDirection = (x, y) => {
 	}
 };
 
+let showAllTiles = (show) => {
+	let gridElem = document.getElementById('grid');
+	if (show)
+		gridElem.addClass('show-all');
+	else
+		gridElem.removeClass('show-all');
+};
+
 document.addEventListener('keydown', (e) => {
 	switch (e.keyCode) {
 		case 37:
@@ -355,6 +361,18 @@ document.addEventListener('keydown', (e) => {
 		
 		case 32: {
 			switchPlayerState(Math.abs(playerState - 1));
+		} break;
+		
+		case 16: {
+			showAllTiles(true);
+		} break;
+	}
+});
+
+document.addEventListener('keyup', (e) => {
+	switch (e.keyCode) {
+		case 16: {
+			showAllTiles(false);
 		} break;
 	}
 });

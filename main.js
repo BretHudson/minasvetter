@@ -10,6 +10,7 @@ const TILE_RESERVED = -1;
 const TILE_EMPTY = 0;
 const TILE_MINE = 1 << 0;
 const TILE_MARKED = 1 << 1;
+const TILE_QUESTION = 1 << 2;
 
 class Random {
 	constructor(seed) {
@@ -332,10 +333,21 @@ let switchPlayerState = (state) => {
 let markGrid = (grid, rowWidth, player, x, y) => {
 	let item = getGridItem(grid, rowWidth, player.x + x, player.y + y);
 	if (!item.element.hasClass('revealed')) {
-		item.element.toggleClass('marked');
-		item.val ^= TILE_MARKED;
+		if (!item.element.hasClass('marked')) {
+			if (item.element.hasClass('question')) {
+				item.element.removeClass('question');
+				item.val &= TILE_MINE;
+			} else {
+				item.element.addClass('marked');
+				item.val |= TILE_MARKED;
+			}
+		} else {
+			item.element.removeClass('marked');
+			item.element.addClass('question');
+			item.val |= TILE_QUESTION;
+		}
+		console.log(item.val);
 	}
-	switchPlayerState(STATE_MOVE);
 };
 
 let handleDirection = (x, y) => {
@@ -376,11 +388,12 @@ document.addEventListener('keydown', (e) => {
 			handleDirection(0, 1);
 		} break;
 		
+		case 16:
 		case 32: {
-			switchPlayerState(Math.abs(playerState - 1));
+			switchPlayerState(STATE_PLACE);
 		} break;
 		
-		case 16: {
+		case 192: {
 			showAllTiles(true);
 		} break;
 		
@@ -392,7 +405,12 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('keyup', (e) => {
 	switch (e.keyCode) {
-		case 16: {
+		case 16:
+		case 32: {
+			switchPlayerState(STATE_MOVE);
+		} break;
+		
+		case 192: {
 			showAllTiles(false);
 		} break;
 	}

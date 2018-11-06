@@ -78,7 +78,7 @@ header
 	&.player
 		border: 5px solid white
 		&.place
-			border: 5px solid blue
+			border: 5px solid red
 	&:not(.wall)::after
 		content: ''
 		display: block
@@ -88,5 +88,8 @@ header
 		opacity: 1
 		width: 100%
 	&.marked::before
-		content: 'X'
+		content: 'M'
 		color: red
+	&.question::before
+		content: '?'
+		color: lime

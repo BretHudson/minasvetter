@@ -11,11 +11,31 @@ const TILE_EMPTY = 0;
 const TILE_MINE = 1 << 0;
 const TILE_MARKED = 1 << 1;
 
+class Random {
+	constructor(seed) {
+		this.m = 0x80000000;
+		this.a = 1103515245;
+		this.c = 12345;
+		
+		this.m = 0x80000000 - 1;
+		this.a = 16807;
+		this.c = 0;
+		
+		this.seed = seed;
+	}
+	
+	next() {
+		this.seed = (this.a * this.seed + this.c) % this.m;
+		return this.seed;
+	}
+}
+
+let genRNG;
 let shuffle = (arr) => {
 	let curIndex = arr.length, temp, randomIndex;
 	
 	while (curIndex > 0) {
-		randomIndex = Math.floor(Math.random() * curIndex);
+		randomIndex = genRNG.next() % curIndex;
 		--curIndex;
 		
 		temp = arr[curIndex];
@@ -30,30 +50,15 @@ let placeItem = (grid, val, num, maxAdj) => {
 	let sizeOfGrid = grid.length;
 	
 	let testPos = shuffle([ ...Array(sizeOfGrid).keys() ]);
-	//let testPos = [ ...Array(sizeOfGrid).keys() ];
 	for (let i = 0; num && (i < sizeOfGrid); ++i) {
 		let item = grid[testPos[i]];
 		if (item.val !== TILE_EMPTY)
 			continue;
-		if (getAdj(grid, item, val) > maxAdj)
+		// TODO(bret): Need to make sure all adjacent _mines_ are also adhering to this guideline
+		if (getAdj(grid, item, val, true) > maxAdj)
 			continue;
 		item.val = val;
 		--num;
-	}
-	
-	return;
-	
-	for (let i = 0; i < num; ++i) {
-		for (;;) {
-			let r = Math.floor(Math.random() * sizeOfGrid);
-			let item = grid[r];
-			if (item.val !== TILE_EMPTY)
-				continue;
-			if (getAdj(grid, item, val) > maxAdj)
-				continue;
-			item.val = val;
-			break;
-		}
 	}
 };
 
@@ -188,7 +193,12 @@ let getAdj = (grid, item, test) => {
 	return adj;
 };
 
-let initGame = (w, m) => {
+let initGame = (w, m, seed) => {
+	// Set the RNG's seed
+	seed = seed || Math.floor(Math.random() * 1000000);
+	genRNG = new Random(seed);
+	console.log('Creating game with seed', seed);
+	
 	// Clear out the DOM
 	let gridElem = document.q('#grid');
 	while (gridElem.firstChild)

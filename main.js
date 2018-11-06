@@ -1,20 +1,48 @@
-let grid = [];
-let rowWidth = 15;
-let sizeOfGrid = rowWidth * rowWidth;
-let mines = 40;
-let player = {
-	x: Math.floor(rowWidth / 2),
-	y: Math.floor((sizeOfGrid / rowWidth) / 2)
-};
+let grid;
+let rowWidth;
+let sizeOfGrid;
+let mines;
+let player = { x: 0, y: 0 };
+
+let style;
 
 const TILE_RESERVED = -1;
 const TILE_EMPTY = 0;
 const TILE_MINE = 1;
 const TILE_DIAMOND = 2;
 
+let shuffle = (arr) => {
+	let curIndex = arr.length, temp, randomIndex;
+	
+	while (curIndex > 0) {
+		randomIndex = Math.floor(Math.random() * curIndex);
+		--curIndex;
+		
+		temp = arr[curIndex];
+		arr[curIndex] = arr[randomIndex];
+		arr[randomIndex] = temp;
+	}
+	
+	return arr;
+};
+
 let placeItem = (grid, val, num, maxAdj) => {
 	let sizeOfGrid = grid.length;
-	// TODO(bret): Just create an array of grid.length items [0...n-1] and then sort it randomly, go through one by one
+	
+	let testPos = shuffle([ ...Array(sizeOfGrid).keys() ]);
+	//let testPos = [ ...Array(sizeOfGrid).keys() ];
+	for (let i = 0; num && (i < sizeOfGrid); ++i) {
+		let item = grid[testPos[i]];
+		if (item.val !== TILE_EMPTY)
+			continue;
+		if (getAdj(grid, item, val) > maxAdj)
+			continue;
+		item.val = val;
+		--num;
+	}
+	
+	return;
+	
 	for (let i = 0; i < num; ++i) {
 		for (;;) {
 			let r = Math.floor(Math.random() * sizeOfGrid);
@@ -111,7 +139,6 @@ window.on('resize', (e) => {
 
 let getAdjItems = (grid, item, corners) => {
 	let items = [];
-	console.log(item);
 	if (item.left !== null)
 		items.push(grid[item.left]);
 	if (item.right !== null)
@@ -160,8 +187,24 @@ let getAdj = (grid, item, test) => {
 	return adj;
 };
 
-let initGame = () => {
+let initGame = (w, m) => {
+	// Clear out the DOM
 	let gridElem = document.q('#grid');
+	while (gridElem.firstChild)
+		gridElem.removeChild(gridElem.firstChild);
+	
+	// Set up variables
+	grid = [];
+	rowWidth = w;
+	sizeOfGrid = rowWidth * rowWidth;
+	mines = m;
+	player.x = Math.floor(rowWidth / 2);
+	player.y = Math.floor((sizeOfGrid / rowWidth) / 2);
+	
+	// Dynamically size the grid
+	let size = ('' + (100 / rowWidth)).slice(0, 8) + '%';	
+	let css = '.tile{width:' + size + ';height:' + size + '}';
+	style.textContent = css;
 	
 	resizeDOMGrid();
 	
@@ -200,10 +243,11 @@ let initGame = () => {
 	});
 	
 	// Create "reserved" spaces that can't be occupied
-	let center = grid[Math.floor(grid.length / 2)];
-	[center, ...getAdjItems(grid, center, true)].forEach(item => {
-		item.val = TILE_RESERVED;
-	});
+	//let center = grid[Math.floor(grid.length / 2)];
+	let center = getGridItem(grid, rowWidth, player.x, player.y);
+	let reservedArea = getAdjItems(grid, center, true)
+	reservedArea.push(center);
+	reservedArea.forEach(item => { item.val = TILE_RESERVED; });
 	
 	// Place mines
 	placeItem(grid, TILE_MINE, mines, 2);
@@ -244,16 +288,9 @@ let initGame = () => {
 }
 
 document.on('DOMContentLoaded', (e) => {
-	let size = ('' + (100 / rowWidth)).slice(0, 8) + '%';
-	console.log(size);
-	let css = '.tile{width:' + size + ';height:' + size + '}';
-	let style =
-		$new('style')
-			.attr('type', 'text/css')
-			.text(css)
-			.element();
+	style = $new('style').attr('type', 'text/css').element();
 	document.head.appendChild(style);
-	initGame();
+	initGame(15, 36);
 });
 
 document.addEventListener('keydown', (e) => {

@@ -22,11 +22,12 @@ class Random {
 		this.c = 0;
 		
 		this.seed = seed;
+		this.state = seed;
 	}
 	
 	next() {
-		this.seed = (this.a * this.seed + this.c) % this.m;
-		return this.seed;
+		this.state = (this.a * this.state + this.c) % this.m;
+		return this.state;
 	}
 }
 
@@ -193,11 +194,17 @@ let getAdj = (grid, item, test) => {
 	return adj;
 };
 
+let curGame = { w: 0, m: 0, seed: 0 };
 let initGame = (w, m, seed) => {
 	// Set the RNG's seed
 	seed = seed || Math.floor(Math.random() * 1000000);
 	genRNG = new Random(seed);
 	console.log('Creating game with seed', seed);
+	
+	// Save it to curGame
+	curGame.w = w;
+	curGame.m = m;
+	curGame.seed = seed;
 	
 	// Clear out the DOM
 	let gridElem = document.q('#grid');
@@ -375,6 +382,10 @@ document.addEventListener('keydown', (e) => {
 		
 		case 16: {
 			showAllTiles(true);
+		} break;
+		
+		case 82: {
+			initGame(curGame.w, curGame.m, curGame.seed);
 		} break;
 	}
 });

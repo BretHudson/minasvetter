@@ -1,8 +1,7 @@
 let grid = [];
-let mines = 15;
-let diamonds = mines;
-let sizeOfGrid = 121;
-let rowWidth = 11;
+let rowWidth = 15;
+let sizeOfGrid = rowWidth * rowWidth;
+let mines = 40;
 let player = {
 	x: Math.floor(rowWidth / 2),
 	y: Math.floor((sizeOfGrid / rowWidth) / 2)
@@ -206,9 +205,8 @@ let initGame = () => {
 		item.val = TILE_RESERVED;
 	});
 	
-	// Place mines and diamons
+	// Place mines
 	placeItem(grid, TILE_MINE, mines, 2);
-	//placeItem(grid, TILE_DIAMOND, diamonds, 0);
 	
 	// Create the DOM elements and set data-adj
 	grid.forEach(item => {
@@ -246,6 +244,15 @@ let initGame = () => {
 }
 
 document.on('DOMContentLoaded', (e) => {
+	let size = ('' + (100 / rowWidth)).slice(0, 8) + '%';
+	console.log(size);
+	let css = '.tile{width:' + size + ';height:' + size + '}';
+	let style =
+		$new('style')
+			.attr('type', 'text/css')
+			.text(css)
+			.element();
+	document.head.appendChild(style);
 	initGame();
 });
 

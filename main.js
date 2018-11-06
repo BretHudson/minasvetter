@@ -1,6 +1,6 @@
 let grid = [];
-let mines = 10;
-let diamonds = 5;
+let mines = 15;
+let diamonds = mines;
 let sizeOfGrid = 121;
 let rowWidth = 11;
 let player = {
@@ -8,18 +8,23 @@ let player = {
 	y: Math.floor((sizeOfGrid / rowWidth) / 2)
 };
 
+const TILE_RESERVED = -1;
 const TILE_EMPTY = 0;
 const TILE_MINE = 1;
 const TILE_DIAMOND = 2;
 
 let placeItem = (grid, val, num, maxAdj) => {
 	let sizeOfGrid = grid.length;
+	// TODO(bret): Just create an array of grid.length items [0...n-1] and then sort it randomly, go through one by one
 	for (let i = 0; i < num; ++i) {
 		for (;;) {
 			let r = Math.floor(Math.random() * sizeOfGrid);
-			if (grid[r].val !== TILE_EMPTY)
+			let item = grid[r];
+			if (item.val !== TILE_EMPTY)
 				continue;
-			grid[r].val = val;
+			if (getAdj(grid, item, val) > maxAdj)
+				continue;
+			item.val = val;
 			break;
 		}
 	}
@@ -33,7 +38,7 @@ let revealGrid = (grid, rowWidth, x, y) => {
 	let item = getGridItem(grid, rowWidth, x, y);
 	item.element.addClass('revealed');
 	// TODO(bret): Recursively do stuff
-}
+};
 
 let movePlayer = (grid, rowWidth, player, x, y) => {
 	let newX = player.x + x;
@@ -41,10 +46,8 @@ let movePlayer = (grid, rowWidth, player, x, y) => {
 	let numRows = grid.length / rowWidth;
 	if ((newX < 0) || (newX == rowWidth) ||
 		(newY < 0) || (newY == numRows)) {
-		console.log('no', newX, newY, player);
 		return;
 	}
-	console.log('good');
 	
 	let cur = getGridItem(grid, rowWidth, player.x, player.y);
 	cur.element.removeClass('player');
@@ -74,6 +77,28 @@ let resizeDOMGrid = () => {
 window.on('resize', (e) => {
 	resizeDOMGrid();
 });
+
+let getAdjItems = (grid, item) => {
+	let items = [];
+	console.log(item);
+	if (item.left !== null)
+		items.push(grid[item.left]);
+	if (item.right !== null)
+		items.push(grid[item.right]);
+	if (item.top !== null)
+		items.push(grid[item.top]);
+	if (item.bottom !== null)
+		items.push(grid[item.bottom]);
+	if (item.upLeft !== null)
+		items.push(grid[item.upLeft]);
+	if (item.upRight !== null)
+		items.push(grid[item.upRight]);
+	if (item.downLeft !== null)
+		items.push(grid[item.downLeft]);
+	if (item.downRight !== null)
+		items.push(grid[item.downRight]);
+	return items;
+};
 
 let getAdj = (grid, item, test) => {
 	let adj = 0;
@@ -110,7 +135,9 @@ document.on('DOMContentLoaded', (e) => {
 	for (let i = 0; i < sizeOfGrid; ++i) {
 		grid.push({
 			val: TILE_EMPTY,
-			left: null, right: null, top: null, bottom: null
+			left: null, right: null, top: null, bottom: null,
+			upLeft: null, upRight: null,
+			downLeft: null, downRight: null
 		});
 	}
 	
@@ -124,16 +151,38 @@ document.on('DOMContentLoaded', (e) => {
 			item.top = index - rowWidth;
 		if (Math.floor(index / rowWidth) < (sizeOfGrid / rowWidth) - 1)
 			item.bottom = index + rowWidth;
+		if (item.top !== null) {
+			if (item.left !== null)
+				item.upLeft = item.top - 1;
+			if (item.right !== null)
+				item.upRight = item.top + 1;
+		}
+		if (item.bottom !== null) {
+			if (item.left !== null)
+				item.downLeft = item.bottom - 1;
+			if (item.right !== null)
+				item.downRight = item.bottom + 1;
+		}
+	});
+	
+	// Create "reserved" spaces that can't be occupied
+	let center = grid[Math.floor(grid.length / 2)];
+	[center, ...getAdjItems(grid, center)].forEach(item => {
+		item.val = TILE_RESERVED;
 	});
 	
 	// Place mines and diamons
 	placeItem(grid, TILE_MINE, mines, 2);
-	//placeItem(grid, TILE_DIAMOND, diamonds);
+	placeItem(grid, TILE_DIAMOND, diamonds, 0);
 	
 	// Create the DOM elements and set data-adj
 	grid.forEach(item => {
 		let className = '.tile.covered';
 		switch (item.val) {
+			case TILE_RESERVED: {
+				item.val = TILE_EMPTY;
+			} break;
+			
 			case TILE_MINE: {
 				className += '.mine.hide-adj';
 			} break;

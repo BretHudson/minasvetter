@@ -35,9 +35,34 @@ let getGridItem = (grid, rowWidth, x, y) => {
 };
 
 let revealGrid = (grid, rowWidth, x, y) => {
-	let item = getGridItem(grid, rowWidth, x, y);
-	item.element.addClass('revealed');
-	// TODO(bret): Recursively do stuff
+	let queue = [];
+	let nextQueue = [];
+	let startItem = getGridItem(grid, rowWidth, x, y);
+	queue.push(startItem);
+	while (queue.length > 0) {
+		let item = queue.shift();
+		
+		if (item.val !== 0)
+			continue;
+		if (item.adjCount > 0) {
+			item.element.addClass('revealed');
+			continue;
+		}
+		if (item.element.hasClass('revealed'))
+			continue;
+		
+		let adj = getAdjItems(grid, item, true);
+		let mines = adj.reduce((acc, item) => {
+			return acc + ((item.val === TILE_MINE) ? 1 : 0);
+		}, 0);
+		if ((item.val === 0) && (mines === 0)) {
+			queue.push(...adj);
+		}
+		item.element.addClass('revealed');
+		// TODO(bret): Recursively do stuff
+	}
+	
+	startItem.element.addClass('revealed');
 };
 
 let movePlayer = (grid, rowWidth, player, x, y) => {
@@ -78,7 +103,7 @@ window.on('resize', (e) => {
 	resizeDOMGrid();
 });
 
-let getAdjItems = (grid, item) => {
+let getAdjItems = (grid, item, corners) => {
 	let items = [];
 	console.log(item);
 	if (item.left !== null)
@@ -89,17 +114,20 @@ let getAdjItems = (grid, item) => {
 		items.push(grid[item.top]);
 	if (item.bottom !== null)
 		items.push(grid[item.bottom]);
-	if (item.upLeft !== null)
-		items.push(grid[item.upLeft]);
-	if (item.upRight !== null)
-		items.push(grid[item.upRight]);
-	if (item.downLeft !== null)
-		items.push(grid[item.downLeft]);
-	if (item.downRight !== null)
-		items.push(grid[item.downRight]);
+	if (corners === true) {
+		if (item.upLeft !== null)
+			items.push(grid[item.upLeft]);
+		if (item.upRight !== null)
+			items.push(grid[item.upRight]);
+		if (item.downLeft !== null)
+			items.push(grid[item.downLeft]);
+		if (item.downRight !== null)
+			items.push(grid[item.downRight]);
+	}
 	return items;
 };
 
+// TODO(bret): Get rid of this, and instead use filter functions :)
 let getAdj = (grid, item, test) => {
 	let adj = 0;
 	let left, right;
@@ -126,7 +154,7 @@ let getAdj = (grid, item, test) => {
 	return adj;
 };
 
-document.on('DOMContentLoaded', (e) => {
+let initGame = () => {
 	let gridElem = document.q('#grid');
 	
 	resizeDOMGrid();
@@ -134,7 +162,7 @@ document.on('DOMContentLoaded', (e) => {
 	// Initialize the grid array
 	for (let i = 0; i < sizeOfGrid; ++i) {
 		grid.push({
-			val: TILE_EMPTY,
+			val: TILE_EMPTY, adjCount: 0,
 			left: null, right: null, top: null, bottom: null,
 			upLeft: null, upRight: null,
 			downLeft: null, downRight: null
@@ -167,13 +195,13 @@ document.on('DOMContentLoaded', (e) => {
 	
 	// Create "reserved" spaces that can't be occupied
 	let center = grid[Math.floor(grid.length / 2)];
-	[center, ...getAdjItems(grid, center)].forEach(item => {
+	[center, ...getAdjItems(grid, center, true)].forEach(item => {
 		item.val = TILE_RESERVED;
 	});
 	
 	// Place mines and diamons
 	placeItem(grid, TILE_MINE, mines, 2);
-	placeItem(grid, TILE_DIAMOND, diamonds, 0);
+	//placeItem(grid, TILE_DIAMOND, diamonds, 0);
 	
 	// Create the DOM elements and set data-adj
 	grid.forEach(item => {
@@ -197,7 +225,10 @@ document.on('DOMContentLoaded', (e) => {
 		//if (item.val !== TILE_MINE) {
 		
 		item.element = $new(className).element();
-		item.element.dataset.adj = adj || '';
+		if (item.val === TILE_EMPTY) {
+			item.adjCount = adj;
+			item.element.dataset.adj = adj || '';
+		}
 		gridElem.appendChild(item.element);
 	});
 	
@@ -205,9 +236,13 @@ document.on('DOMContentLoaded', (e) => {
 	gi.element.addClass('player');
 	
 	revealGrid(grid, rowWidth, player.x, player.y);
+}
+
+document.on('DOMContentLoaded', (e) => {
+	initGame();
 });
 
-document.addEventListener('keyup', (e) => {
+document.addEventListener('keydown', (e) => {
 	switch (e.keyCode) {
 		case 37:
 		case 65: {

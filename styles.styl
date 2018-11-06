@@ -35,36 +35,40 @@ header
 		width: 100%
 	@media (orientation: portrait)
 		width: 100%
-	.tile
-		position: relative
-		border: 1px solid c_black
-		display: inline-block
-		width: 9.090909%
-		height: 9.090909%
-		background-color: #a1a1a1
-		color: black
-		@media (orientation: landscape)
-			font-size: 3.5vh
-		@media (orientation: portrait)
-			font-size: 3.5vw
-		&,
-		&.revealed
-			background-color: #cdcdcd
-			&.mine
-				background-color: red
-			&.diamond
-				background-color: cyan
-			//&:not(.hide-adj)::before
-			&::before
-				position: absolute
-				left: 50%
-				top: 50%
-				transform: translate(-50%, -50%)
-				content: attr(data-adj)
-				display: block
-		&.player
-			border: 5px solid white
-		&::after
-			content: ''
+
+.tile
+	position: relative
+	border: 1px solid c_black
+	display: inline-block
+	width: 9.090909%
+	height: 9.090909%
+	background-color: #a1a1a1
+	color: black
+	@media (orientation: landscape)
+		font-size: 3.5vh
+	@media (orientation: portrait)
+		font-size: 3.5vw
+	&.wall
+		background-color: #666
+	&.revealed
+		background-color: #cdcdcd
+		&.mine
+			background-color: red
+			&.defused
+				background-color: #A52A2A
+		&.diamond
+			background-color: cyan
+		//&:not(.hide-adj)::before
+		&::before
+			position: absolute
+			left: 50%
+			top: 50%
+			transform: translate(-50%, -50%)
+			content: attr(data-adj)
 			display: block
-			padding-bottom: 100%
+	&.player
+		border: 5px solid white
+	&::after
+		content: ''
+		display: block
+		padding-bottom: 100%

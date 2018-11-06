@@ -1,11 +1,25 @@
-let placeItem = (grid, val, num) => {
+let grid = [];
+let mines = 10;
+let diamonds = 5;
+let sizeOfGrid = 121;
+let rowWidth = 11;
+let player = {
+	x: Math.floor(rowWidth / 2),
+	y: Math.floor((sizeOfGrid / rowWidth) / 2)
+};
+
+const TILE_EMPTY = 0;
+const TILE_MINE = 1;
+const TILE_DIAMOND = 2;
+
+let placeItem = (grid, val, num, maxAdj) => {
 	let sizeOfGrid = grid.length;
 	for (let i = 0; i < num; ++i) {
 		for (;;) {
 			let r = Math.floor(Math.random() * sizeOfGrid);
-			if (grid[r] !== 0)
+			if (grid[r].val !== TILE_EMPTY)
 				continue;
-			grid[r] = val;
+			grid[r].val = val;
 			break;
 		}
 	}
@@ -57,45 +71,50 @@ let resizeDOMGrid = () => {
 		gridElem.style.width = '100%';
 };
 
-let grid = [];
-let mines = 10;
-let diamonds = 5;
-let sizeOfGrid = 121;
-let rowWidth = 11;
-let player = {
-	x: Math.floor(rowWidth / 2),
-	y: Math.floor((sizeOfGrid / rowWidth) / 2)
-};
-
 window.on('resize', (e) => {
 	resizeDOMGrid();
 });
+
+let getAdj = (grid, item, test) => {
+	let adj = 0;
+	let left, right;
+	if (item.left !== null) {
+		left = grid[item.left];
+		adj += (left.val === test);
+		if (left.top !== null)
+			adj += (grid[left.top].val === test);
+		if (left.bottom !== null)
+			adj += (grid[left.bottom].val === test);
+	}
+	if (item.right !== null) {
+		right = grid[item.right];
+		adj += (right.val === test);
+		if (right.top !== null)
+			adj += (grid[right.top].val === test);
+		if (right.bottom !== null)
+			adj += (grid[right.bottom].val === test);
+	}
+	if (item.top !== null)
+		adj += (grid[item.top].val === test)
+	if (item.bottom !== null)
+		adj += (grid[item.bottom].val === test)
+	return adj;
+};
 
 document.on('DOMContentLoaded', (e) => {
 	let gridElem = document.q('#grid');
 	
 	resizeDOMGrid();
 	
-	// Create a grid, we need 10x10 for starters
-	for (let i = 0; i < sizeOfGrid; ++i)
-		grid.push(0);
+	// Initialize the grid array
+	for (let i = 0; i < sizeOfGrid; ++i) {
+		grid.push({
+			val: TILE_EMPTY,
+			left: null, right: null, top: null, bottom: null
+		});
+	}
 	
-	placeItem(grid, 1, mines);
-	placeItem(grid, 2, diamonds);
-	
-	grid = grid.map(val => {
-		let className = '.tile.covered';
-		switch (val) {
-			case 1: className += '.mine'; break;
-			case 2: className += '.diamond'; break;
-		}
-		return {
-			val: val,
-			left: null, right: null, top: null, bottom: null,
-			element: $new(className).element()
-		};
-	});
-	
+	// Connect all the tiles so they have references to each other
 	grid.forEach((item, index) => {
 		if ((index % rowWidth) > 0)
 			item.left = index - 1;
@@ -105,36 +124,32 @@ document.on('DOMContentLoaded', (e) => {
 			item.top = index - rowWidth;
 		if (Math.floor(index / rowWidth) < (sizeOfGrid / rowWidth) - 1)
 			item.bottom = index + rowWidth;
-		gridElem.appendChild(item.element);
 	});
 	
+	// Place mines and diamons
+	placeItem(grid, TILE_MINE, mines, 2);
+	//placeItem(grid, TILE_DIAMOND, diamonds);
+	
+	// Create the DOM elements and set data-adj
 	grid.forEach(item => {
-		if (item.val !== 1) {
-			let adj = 0;
-			let left, right;
-			if (item.left) {
-				left = grid[item.left];
-				adj += (left.val === 1);
-				if (left.top)
-					adj += (grid[left.top].val === 1);
-				if (left.bottom)
-					adj += (grid[left.bottom].val === 1);
-			}
-			if (item.right) {
-				right = grid[item.right];
-				adj += (right.val === 1);
-				if (right.top)
-					adj += (grid[right.top].val === 1);
-				if (right.bottom)
-					adj += (grid[right.bottom].val === 1);
-			}
-			if (item.top)
-				adj += (grid[item.top].val === 1)
-			if (item.bottom)
-				adj += (grid[item.bottom].val === 1)
-			if (adj > 0)
-				item.element.dataset.adj = adj;
+		let className = '.tile.covered';
+		switch (item.val) {
+			case TILE_MINE: {
+				className += '.mine.hide-adj';
+			} break;
+			
+			case TILE_DIAMOND: {
+				className += '.diamond.hide-adj';
+			} break;
 		}
+		
+		let adj = getAdj(grid, item, TILE_MINE);
+		
+		//if (item.val !== TILE_MINE) {
+		
+		item.element = $new(className).element();
+		item.element.dataset.adj = adj || '';
+		gridElem.appendChild(item.element);
 	});
 	
 	let gi = getGridItem(grid, rowWidth, player.x, player.y);

@@ -47,13 +47,14 @@ header
 			font-size: 3.5vh
 		@media (orientation: portrait)
 			font-size: 3.5vw
-		//&,
+		&,
 		&.revealed
 			background-color: #cdcdcd
 			&.mine
 				background-color: red
 			&.diamond
 				background-color: cyan
+			//&:not(.hide-adj)::before
 			&::before
 				position: absolute
 				left: 50%

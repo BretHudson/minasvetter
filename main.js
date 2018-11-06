@@ -8,8 +8,8 @@ let style;
 
 const TILE_RESERVED = -1;
 const TILE_EMPTY = 0;
-const TILE_MINE = 1;
-const TILE_DIAMOND = 2;
+const TILE_MINE = 1 << 0;
+const TILE_MARKED = 1 << 1;
 
 let shuffle = (arr) => {
 	let curIndex = arr.length, temp, randomIndex;
@@ -58,6 +58,7 @@ let placeItem = (grid, val, num, maxAdj) => {
 };
 
 let getGridItem = (grid, rowWidth, x, y) => {
+	if ((x < 0) || (x >= rowWidth) || (y < 0) || (y >= rowWidth)) return null;
 	return grid[(y * rowWidth) + x];
 };
 
@@ -109,13 +110,15 @@ let movePlayer = (grid, rowWidth, player, x, y) => {
 	}
 	
 	let cur = getGridItem(grid, rowWidth, player.x, player.y);
+	let tar = getGridItem(grid, rowWidth, newX, newY);
+	
+	if (tar.val & TILE_MARKED) return;
+	
 	cur.element.removeClass('player');
+	tar.element.addClass('player');
 	
 	player.x = newX;
 	player.y = newY;
-	
-	let tar = getGridItem(grid, rowWidth, player.x, player.y);
-	tar.element.addClass('player');
 	
 	revealGrid(grid, rowWidth, player.x, player.y);
 };
@@ -254,7 +257,7 @@ let initGame = (w, m) => {
 	
 	// Create the DOM elements and set data-adj
 	grid.forEach(item => {
-		let className = '.tile.covered';
+		let className = '.tile';
 		switch (item.val) {
 			case TILE_RESERVED: {
 				item.val = TILE_EMPTY;
@@ -263,19 +266,13 @@ let initGame = (w, m) => {
 			case TILE_MINE: {
 				className += '.mine.hide-adj';
 			} break;
-			
-			case TILE_DIAMOND: {
-				className += '.diamond.hide-adj';
-			} break;
 		}
 		
 		let adj = getAdj(grid, item, TILE_MINE);
 		
-		//if (item.val !== TILE_MINE) {
-		
 		item.element = $new(className).element();
 		if (item.val === TILE_EMPTY) {
-			item.adjCount = adj;
+			item.adjwwunt = adj;
 			item.element.dataset.adj = adj || '';
 		}
 		gridElem.appendChild(item.element);
@@ -293,26 +290,71 @@ document.on('DOMContentLoaded', (e) => {
 	initGame(15, 36);
 });
 
+let STATE_MOVE = 0;
+let STATE_PLACE = 1;
+let playerState = STATE_MOVE;
+
+let switchPlayerState = (state) => {
+	if (playerState === state) return;
+	
+	let playerItem = getGridItem(grid, rowWidth, player.x, player.y);
+	
+	switch (playerState) {
+		case STATE_PLACE: {
+			playerItem.element.removeClass('place');
+		} break;
+	}
+	
+	switch (state) {
+		case STATE_PLACE: {
+			playerItem.element.addClass('place');
+		} break;
+	}
+	
+	playerState = state;
+}
+
+let markGrid = (grid, rowWidth, player, x, y) => {
+	let item = getGridItem(grid, rowWidth, player.x + x, player.y + y);
+	if (!item.element.hasClass('revealed')) {
+		item.element.toggleClass('marked');
+		item.val ^= TILE_MARKED;
+	}
+	switchPlayerState(STATE_MOVE);
+};
+
+let handleDirection = (x, y) => {
+	if (playerState === STATE_MOVE)
+		movePlayer(grid, rowWidth, player, x, y);
+	else {
+		markGrid(grid, rowWidth, player, x, y);
+	}
+};
+
 document.addEventListener('keydown', (e) => {
 	switch (e.keyCode) {
 		case 37:
 		case 65: {
-			movePlayer(grid, rowWidth, player, -1, 0);
+			handleDirection(-1, 0);
 		} break;
 		
 		case 38:
 		case 87: {
-			movePlayer(grid, rowWidth, player, 0, -1);
+			handleDirection(0, -1);
 		} break;
 		
 		case 39:
 		case 68: {
-			movePlayer(grid, rowWidth, player, 1, 0);
+			handleDirection(1, 0);
 		} break;
 		
 		case 40:
 		case 83: {
-			movePlayer(grid, rowWidth, player, 0, 1);
+			handleDirection(0, 1);
+		} break;
+		
+		case 32: {
+			switchPlayerState(Math.abs(playerState - 1));
 		} break;
 	}
 });

@@ -49,28 +49,30 @@ header
 		font-size: 3.5vh
 	@media (orientation: portrait)
 		font-size: 3.5vw
+	&::before
+		position: absolute
+		left: 50%
+		top: 50%
+		transform: translate(-50%, -50%)
+		display: block
 	&.wall
 		background-color: #666
 	&.revealed
 		background-color: #cdcdcd
 		&.mine
 			background-color: red
-			&.defused
-				background-color: #A52A2A
+			/*&.defused
+				background-color: #A52A2A*/
 		&.diamond
 			background-color: cyan
-		//&:not(.hide-adj)::before
 		&::before
-			position: absolute
-			left: 50%
-			top: 50%
-			transform: translate(-50%, -50%)
 			content: attr(data-adj)
-			display: block
 		&::after
 			opacity: 0 !important
 	&.player
 		border: 5px solid white
+		&.place
+			border: 5px solid blue
 	&:not(.wall)::after
 		content: ''
 		display: block
@@ -80,3 +82,6 @@ header
 		opacity: 1
 		transition: opacity 0.5s
 		width: 100%
+	&.marked::before
+		content: 'X'
+		color: red

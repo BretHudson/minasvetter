@@ -85,14 +85,14 @@ let revealGrid = (grid, rowWidth, x, y) => {
 				continue;
 			
 			let adj = getAdjItems(grid, item, true);
+			// TODO(bret): Would it make more sense to use adjCount here???
 			let mines = adj.reduce((acc, item) => {
-				return acc + ((item.val === TILE_MINE) ? 1 : 0);
+				return acc + ((item.val & TILE_MINE) ? 1 : 0);
 			}, 0);
 			if ((item.val === 0) && (mines === 0)) {
 				nextQueue.push(...adj);
 			}
 			item.element.addClass('revealed');
-			// TODO(bret): Recursively do stuff
 		}
 		let temp = queue;
 		queue = nextQueue;

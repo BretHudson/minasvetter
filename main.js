@@ -39,28 +39,35 @@ let revealGrid = (grid, rowWidth, x, y) => {
 	let nextQueue = [];
 	let startItem = getGridItem(grid, rowWidth, x, y);
 	queue.push(startItem);
-	while (queue.length > 0) {
-		let item = queue.shift();
-		
-		if (item.val !== 0)
-			continue;
-		if (item.adjCount > 0) {
+	let revealAdj = () => {
+		while (queue.length > 0) {
+			let item = queue.shift();
+			
+			if (item.val !== 0)
+				continue;
+			if (item.adjCount > 0) {
+				item.element.addClass('revealed');
+				continue;
+			}
+			if (item.element.hasClass('revealed'))
+				continue;
+			
+			let adj = getAdjItems(grid, item, true);
+			let mines = adj.reduce((acc, item) => {
+				return acc + ((item.val === TILE_MINE) ? 1 : 0);
+			}, 0);
+			if ((item.val === 0) && (mines === 0)) {
+				nextQueue.push(...adj);
+			}
 			item.element.addClass('revealed');
-			continue;
+			// TODO(bret): Recursively do stuff
 		}
-		if (item.element.hasClass('revealed'))
-			continue;
-		
-		let adj = getAdjItems(grid, item, true);
-		let mines = adj.reduce((acc, item) => {
-			return acc + ((item.val === TILE_MINE) ? 1 : 0);
-		}, 0);
-		if ((item.val === 0) && (mines === 0)) {
-			queue.push(...adj);
-		}
-		item.element.addClass('revealed');
-		// TODO(bret): Recursively do stuff
-	}
+		let temp = queue;
+		queue = nextQueue;
+		nextQueue = temp;
+		setTimeout(revealAdj, 90);
+	};
+	revealAdj();
 	
 	startItem.element.addClass('revealed');
 };

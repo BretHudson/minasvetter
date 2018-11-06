@@ -60,11 +60,11 @@ let resizeDOMGrid = () => {
 let grid = [];
 let mines = 10;
 let diamonds = 5;
-let sizeOfGrid = 100;
-let rowWidth = 10;
+let sizeOfGrid = 121;
+let rowWidth = 11;
 let player = {
 	x: Math.floor(rowWidth / 2),
-	y: Math.floor((sizeOfGrid / rowWidth)) - 1
+	y: Math.floor((sizeOfGrid / rowWidth) / 2)
 };
 
 window.on('resize', (e) => {

@@ -3,6 +3,7 @@ let rowWidth;
 let sizeOfGrid;
 let mines;
 let player = { x: 0, y: 0 };
+let playerElem;
 
 let style;
 
@@ -116,7 +117,11 @@ let burst = (grid, rowWidth, x, y) => {
 	});
 };
 
+let isMoving = false;
 let movePlayer = (grid, rowWidth, player, x, y) => {
+	if (isMoving) return;
+	isMoving = true;
+	
 	let newX = player.x + x;
 	let newY = player.y + y;
 	let numRows = grid.length / rowWidth;
@@ -130,13 +135,32 @@ let movePlayer = (grid, rowWidth, player, x, y) => {
 	
 	if (tar.val & TILE_MARKED) return;
 	
-	cur.element.removeClass('player');
-	tar.element.addClass('player');
+	//cur.element.removeClass('player');
+	//tar.element.addClass('player');
 	
 	player.x = newX;
 	player.y = newY;
 	
-	revealGrid(grid, rowWidth, player.x, player.y);
+	let gridElem = document.q('#grid');
+	let gridRect = gridElem.getBoundingClientRect();
+	
+	let tarRect = tar.element.getBoundingClientRect();
+	let tarX = (tar.id % rowWidth) + 0.5;
+	let tarY = Math.floor(tar.id / rowWidth) + 0.5;
+	tarX = (tarX * tarRect.width);
+	tarY = (tarY * tarRect.height);
+	
+	tarX /= gridRect.width;
+	tarY /= gridRect.height;
+	console.log({ tarX, tarY });
+	
+	let snapshot = Transition.snapshot(playerElem);
+	playerElem.style.left = (tarX * 100) + '%';
+	playerElem.style.top = (tarY * 100) + '%';
+	Transition.from(playerElem, snapshot, 200).then(() => {
+		revealGrid(grid, rowWidth, player.x, player.y);
+		isMoving = false;
+	});
 };
 
 let resizeDOMGrid = () => {
@@ -227,7 +251,7 @@ let gridClick = (e) => {
 	} else {
 		coords = getMouseToGrid(e.clientX, e.clientY);
 	}
-	markGrid(grid, curGame.w, coords, 0, 0);
+	return markGrid(grid, curGame.w, coords, 0, 0);
 };
 
 let curGame = { w: 0, m: 0, seed: 0 };
@@ -331,7 +355,11 @@ let initGame = (w, m, seed) => {
 	});
 	
 	let gi = getGridItem(grid, rowWidth, player.x, player.y);
-	gi.element.addClass('player');
+	//gi.element.addClass('player');
+	
+	// Create player element
+	playerElem = $new('.player-elem').element();
+	gridElem.appendChild(playerElem);
 	
 	revealGrid(grid, rowWidth, player.x, player.y);
 }
@@ -353,13 +381,13 @@ let switchPlayerState = (state) => {
 	
 	switch (playerState) {
 		case STATE_PLACE: {
-			playerItem.element.removeClass('place');
+			playerElem.removeClass('place');
 		} break;
 	}
 	
 	switch (state) {
 		case STATE_PLACE: {
-			playerItem.element.addClass('place');
+			playerElem.addClass('place');
 		} break;
 	}
 	
@@ -383,6 +411,7 @@ let markGrid = (grid, rowWidth, player, x, y) => {
 			item.val |= TILE_QUESTION;
 		}
 	}
+	return true && (item.val & TILE_MARKED);
 };
 
 let handleDirection = (x, y) => {
@@ -492,11 +521,6 @@ window.on('touchmove', e => {
 });
 window.on('touchend', e => {
 	let now = new Date().getTime();
-	let elapsed = now - lastTouch;
-	if (checkElapsed(now, lastTouch)) {
-		burst(grid, curGame.w, player.x, player.y);
-	}
-	lastTouch = now;
 	
 	if (e.touches.length === 0) {
 		// If the user swiped
@@ -521,7 +545,12 @@ window.on('touchend', e => {
 				}
 			}
 		} else {
-			gridClick(e);
+			if (checkElapsed(now, lastTouch)) {
+				burst(grid, curGame.w, player.x, player.y);
+			} else
+				gridClick(e)
 		}
+		
+		lastTouch = now;
 	}
 });

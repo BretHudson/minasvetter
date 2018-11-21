@@ -26,15 +26,33 @@ header
 	@media (orientation: portrait)
 		font-size: 10vw
 
-#grid
+#grid-holder
 	padding: 16px
 	margin: 0 auto
 	border: 5px dashed #333
+
+#grid
+	position: relative
+	margin: 0 auto
 	font-size: 0
 	@media (orientation: landscape)
 		width: 100%
 	@media (orientation: portrait)
 		width: 100%
+
+.player-elem
+	position: absolute
+	width: 6.5%
+	height: 6.5%
+	background-color: #0A95FF
+	border: 5px solid white
+	left: 50%
+	top: 50%
+	opacity: 0.5
+	transform: translate(-50%, -50%)
+	transition: background-color 0.15s
+	&.place
+		background-color: red
 
 .tile
 	position: relative

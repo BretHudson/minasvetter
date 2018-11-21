@@ -105,6 +105,17 @@ let revealGrid = (grid, rowWidth, x, y) => {
 	startItem.element.addClass('revealed');
 };
 
+let burst = (grid, rowWidth, x, y) => {
+	let item = getGridItem(grid, rowWidth, player.x, player.y);
+	let adj = getAdjItems(grid, item, true);
+	adj.forEach((item) => {
+		if (item.val & TILE_MARKED) return;
+		let x = item.id % rowWidth;
+		let y = Math.floor(item.id / rowWidth);
+		revealGrid(grid, rowWidth, x, y);
+	});
+};
+
 let movePlayer = (grid, rowWidth, player, x, y) => {
 	let newX = player.x + x;
 	let newY = player.y + y;
@@ -195,6 +206,30 @@ let getAdj = (grid, item, test) => {
 	return adj;
 };
 
+let getMouseToGrid = (x, y) => {
+	let gridElem = document.q('#grid');
+	let rect = gridElem.getBoundingClientRect();
+	let firstTileRect = gridElem.children[0].getBoundingClientRect();
+	x -= firstTileRect.x;
+	y -= firstTileRect.y;
+	
+	let elemWidth = firstTileRect.width;
+	x = Math.floor(x / elemWidth);
+	y = Math.floor(y / elemWidth);
+	return { x: x, y: y };
+};
+
+let gridClick = (e) => {
+	let gridElem = document.q('#grid');
+	let coords;
+	if (e instanceof TouchEvent) {
+		coords = getMouseToGrid(touchStartX, touchStartY);
+	} else {
+		coords = getMouseToGrid(e.clientX, e.clientY);
+	}
+	markGrid(grid, curGame.w, coords, 0, 0);
+};
+
 let curGame = { w: 0, m: 0, seed: 0 };
 let initGame = (w, m, seed) => {
 	// Set the RNG's seed
@@ -239,6 +274,7 @@ let initGame = (w, m, seed) => {
 	
 	// Connect all the tiles so they have references to each other
 	grid.forEach((item, index) => {
+		item.id = index;
 		if ((index % rowWidth) > 0)
 			item.left = index - 1;
 		if ((index % rowWidth) < (rowWidth - 1))
@@ -288,7 +324,7 @@ let initGame = (w, m, seed) => {
 		
 		item.element = $new(className).element();
 		if (item.val === TILE_EMPTY) {
-			item.adjwwunt = adj;
+			item.adjCount = adj;
 			item.element.dataset.adj = adj || '';
 		}
 		gridElem.appendChild(item.element);
@@ -346,7 +382,6 @@ let markGrid = (grid, rowWidth, player, x, y) => {
 			item.element.addClass('question');
 			item.val |= TILE_QUESTION;
 		}
-		console.log(item.val);
 	}
 };
 
@@ -366,26 +401,33 @@ let showAllTiles = (show) => {
 		gridElem.removeClass('show-all');
 };
 
+let inputQueue = [];
+let addToQueue = (x, y) => {
+	//inputQueue.push([ x, y ]);
+	handleDirection(x, y);
+};
+
+let lastPress = 0;
 document.addEventListener('keydown', (e) => {
 	switch (e.keyCode) {
 		case 37:
 		case 65: {
-			handleDirection(-1, 0);
+			addToQueue(-1, 0);
 		} break;
 		
 		case 38:
 		case 87: {
-			handleDirection(0, -1);
+			addToQueue(0, -1);
 		} break;
 		
 		case 39:
 		case 68: {
-			handleDirection(1, 0);
+			addToQueue(1, 0);
 		} break;
 		
 		case 40:
 		case 83: {
-			handleDirection(0, 1);
+			addToQueue(0, 1);
 		} break;
 		
 		case 16:
@@ -403,15 +445,83 @@ document.addEventListener('keydown', (e) => {
 	}
 });
 
+let checkElapsed = (now, then) => {
+	let elapsed = now - then;
+	return ((elapsed < 600) && (elapsed > 0));
+};
+
 document.addEventListener('keyup', (e) => {
 	switch (e.keyCode) {
 		case 16:
 		case 32: {
+			let now = new Date().getTime();
+			if (checkElapsed(now, lastPress)) {
+				burst(grid, curGame.w, player.x, player.y);
+			}
+			lastPress = now;
 			switchPlayerState(STATE_MOVE);
 		} break;
 		
 		case 192: {
 			showAllTiles(false);
 		} break;
+	}
+});
+
+/// Touch events courtesy of WITS/Ian Jones
+// https://raw.githubusercontent.com/WITS/regretris/master/js/main.js
+// Touch events
+let touchStartX = 0;
+let touchStartY = 0;
+let touchX = 0;
+let touchY = 0;
+let lastTouch = 0;
+window.on('touchstart', e => {
+	// Otherwise, listen for swipes
+	if (e.touches.length === 1) {
+		touchX = touchStartX = e.touches[0].clientX;
+		touchY = touchStartY = e.touches[0].clientY;
+		e.preventDefault();
+	}
+}, {
+	passive: false
+});
+window.on('touchmove', e => {
+	touchX = e.touches[0].clientX;
+	touchY = e.touches[0].clientY;
+});
+window.on('touchend', e => {
+	let now = new Date().getTime();
+	let elapsed = now - lastTouch;
+	if (checkElapsed(now, lastTouch)) {
+		burst(grid, curGame.w, player.x, player.y);
+	}
+	lastTouch = now;
+	
+	if (e.touches.length === 0) {
+		// If the user swiped
+		const dist = Math.sqrt(
+			Math.pow(touchX - touchStartX, 2) +
+			Math.pow(touchY - touchStartY, 2)
+		);
+		if (dist >= 8) {
+			// Detect axis
+			if (Math.abs(touchX - touchStartX) >
+				Math.abs(touchY - touchStartY)) { // Hor
+				if (touchX < touchStartX) { // Left
+					addToQueue(-1, 0);
+				} else { // Right
+					addToQueue(1, 0);
+				}
+			} else { // Vert
+				if (touchY < touchStartY) { // Up
+					addToQueue(0, -1);
+				} else { // Down
+					addToQueue(0, 1);
+				}
+			}
+		} else {
+			gridClick(e);
+		}
 	}
 });

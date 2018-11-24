@@ -63,9 +63,9 @@ header
 	background-color: #a1a1a1
 	color: black
 	@media (orientation: landscape)
-		font-size: 3.5vh
+		font-size: 2.4vh
 	@media (orientation: portrait)
-		font-size: 3.5vw
+		font-size: 2.4vw
 	&::before
 		position: absolute
 		left: 50%
@@ -73,6 +73,8 @@ header
 		transform: translate(-50%, -50%)
 		content: attr(data-adj)
 		display: block
+		transition: color 0.3s
+		z-index: -1
 	&::after
 		content: ''
 		display: block
@@ -84,8 +86,12 @@ header
 		transition: opacity 0.3s
 	&.revealed
 		background-color: #cdcdcd
+		&::before
+			z-index: 1
 		&::after
 			opacity: 0 !important
+	&.adj
+		background-color: #ddddcd
 	&.wall
 		background-color: #666
 	&.mine
@@ -100,9 +106,33 @@ header
 			color: black
 		&::after
 			opacity: 0
+	&.marked::before, &.question::before
+		z-index: 1
+		@media (orientation: landscape)
+			font-size: 1.8vh
+		@media (orientation: portrait)
+			font-size: 1.8vw
 	&.marked::before
+		font-weight: 700
 		content: 'M'
-		color: red
+		color: white
 	&.question::before
+		font-weight: 700
 		content: '?'
-		color: lime
+		color: white
+	.marker
+		position: absolute
+		left: 15%
+		top: 15%
+		right: 15%
+		bottom: 15%
+		border-radius: 50%
+		border: 0.25vw solid transparent
+		border-color: transparent
+		transition: border-color 0.3s
+		^[0].revealed.mine ^[1..-1]
+			background-color: #990000
+		^[0].marked ^[1..-1]
+			border-color: red
+		^[0].question ^[1..-1]
+			border-color: yellow

@@ -345,8 +345,12 @@ let initGame = (w, m, seed) => {
 		}
 		
 		let adj = getAdj(grid, item, TILE_MINE);
+		if (adj > 0)
+			className += '.adj';
 		
-		item.element = $new(className).element();
+		item.element = $new(className).child(
+			$new('.marker')
+		).element();
 		if (item.val === TILE_EMPTY) {
 			item.adjCount = adj;
 			item.element.dataset.adj = adj || '';

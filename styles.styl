@@ -74,6 +74,13 @@ header
 		content: attr(data-adj)
 		display: block
 	&::after
+		content: ''
+		display: block
+		padding-bottom: 100%
+		background-color: #a1a1a1
+		background-color: black
+		opacity: 1
+		width: 100%
 		transition: opacity 0.3s
 	&.revealed
 		background-color: #cdcdcd
@@ -92,15 +99,7 @@ header
 			content: attr(data-adj) !important
 			color: black
 		&::after
-			opacity: 0 !important
-	&:not(.wall)::after
-		content: ''
-		display: block
-		padding-bottom: 100%
-		background-color: #a1a1a1
-		background-color: black
-		opacity: 1
-		width: 100%
+			opacity: 0
 	&.marked::before
 		content: 'M'
 		color: red
